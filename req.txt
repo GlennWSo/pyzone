@@ -1,0 +1,4 @@
+pymadcad==0.13.2
+ipython==8.7.0
+
+
