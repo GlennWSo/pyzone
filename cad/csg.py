@@ -47,7 +47,6 @@ def randsurf(res=30, seed=1, **kwargs) -> cad.Mesh:
     poly = pv.ParametricRandomHills(
         u_res=res, v_res=res, w_res=res, randomseed=seed, **kwargs
     )
-    poly.translate((0, -10, 0))
     return poly2mad(poly)
 
 
@@ -77,13 +76,14 @@ def inspect_open_edges(mesh: cad.Mesh, **kwargs):
 def random_block(res=20, seed=1) -> Tuple[cad.Mesh, ...]:
     """A block shape that has been cut with randomhills"""
     surf1 = randsurf(res=res, seed=1)
-    center = surf1.barycenter()
-    base = cad.extrusion(dvec3(center[0], center[1], -10), surf1)
-    axis1 = Axis(dvec3(0, 0, -1), dvec3(0, 0, 1))
+    center = surf1.box().center
+
+    base = cad.extrusion(dvec3(0, 0, -10), surf1)
+    axis1 = Axis(dvec3(center[0], center[1], -2), dvec3(0, 0, 1))
     tool = cad.square(axis1, 20)
     # tool = randsurf(res=res, seed=1)
-    for i, p in enumerate(tool.points):
-        tool.points[i] = dvec3(p[0] * 1.2, p[1] * 1.2, -2.0)
+    # for i, p in enumerate(tool.points):
+    #     tool.points[i] = dvec3(p[0] * 1.2, p[1] * 1.2, -2.0)
 
     res = cad.boolean.boolean(base, tool, (False, True))
     return base, tool, res
@@ -149,5 +149,6 @@ if __name__ == "__main__":
         except AssertionError:
             print(f"resolution: {n} failed")
             debug_boolean(*parts)
+            break
 
     debug_boolean(*parts)
