@@ -47,6 +47,7 @@ def randsurf(res=30, seed=1, **kwargs) -> cad.Mesh:
     poly = pv.ParametricRandomHills(
         u_res=res, v_res=res, w_res=res, randomseed=seed, **kwargs
     )
+    poly.translate((0, 0, 0), inplace=True)
     return poly2mad(poly)
 
 
@@ -109,6 +110,8 @@ def random_block1(res=20, seed=1) -> cad.Mesh:
 
 
 def debug_boolean(base, tool, res):
+    print("base_min:", base.box().min)
+    print("base_max:", base.box().max)
     cad.show([base, tool])
     plot_normals(base)
     plot_normals(tool)
