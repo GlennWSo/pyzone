@@ -40,14 +40,14 @@ def mad2poly(mesh: cad.Mesh) -> pv.PolyData:
     return poly
 
 
-def randsurf(res=30, seed=1, **kwargs) -> cad.Mesh:
+def randsurf(res=30, seed=1, ydist=0, **kwargs) -> cad.Mesh:
     """
     Creates a surface with random hills
     """
     poly = pv.ParametricRandomHills(
         u_res=res, v_res=res, w_res=res, randomseed=seed, **kwargs
     )
-    poly.translate((0, 0, 0), inplace=True)
+    poly.translate((0, ydist, 0), inplace=True)
     return poly2mad(poly)
 
 
@@ -74,9 +74,9 @@ def inspect_open_edges(mesh: cad.Mesh, **kwargs):
         print(poly)
 
 
-def random_block(res=20, seed=1) -> Tuple[cad.Mesh, ...]:
+def random_block(res=20, seed=1, ydist=0) -> Tuple[cad.Mesh, ...]:
     """A block shape that has been cut with randomhills"""
-    surf1 = randsurf(res=res, seed=1)
+    surf1 = randsurf(res=res, seed=1, ydist=ydist)
     center = surf1.box().center
 
     base = cad.extrusion(dvec3(0, 0, -10), surf1)
@@ -137,17 +137,18 @@ def test_boolean(base: cad.Mesh, tool: cad.Mesh, res: cad.Mesh, dbg=False):
 if __name__ == "__main__":
     # booleans work on low res
     # test_boolean(res=100, dbg=True)  # set dbg to inspect what is going on
-    for n in range(5, 105, 5):
-        parts = random_block(res=n, seed=1)
+    for n in range(10, 110, 10):
+        for y in np.linspace(-1, 1, 1):
+            parts = random_block(res=n, seed=1, ydist=y)
 
-        try:
-            print(f"testing res {n}...", end=", ")
-            test_boolean(*parts)
+            try:
+                print(f"testing res: {n}, ymin: {y}", end=", ")
+                test_boolean(*parts)
 
-            print("ok! :)")
-        except AssertionError:
-            print(f"resolution: {n} failed")
-            debug_boolean(*parts)
-            break
+                print("ok! :)")
+            except AssertionError as e:
+                print(f"resolution: {n} failed")
+                debug_boolean(*parts)
+                raise e
 
     debug_boolean(*parts)
