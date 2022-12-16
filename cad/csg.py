@@ -62,9 +62,9 @@ def inspect_open_edges(mesh: cad.Mesh, **kwargs):
         feature_edges=False, non_manifold_edges=False, manifold_edges=False
     )
     pmesh = pv.PolyData(edges.points)
-    print("poly n open edges", poly.n_open_edges)
-    print("poly is manifold", poly.is_manifold)
-    print("diff1 is envelope?", mesh.isenvelope())
+    print("pv.poly n open edges", poly.n_open_edges)
+    print("pv.poly is manifold", poly.is_manifold)
+    print("cad.mesh is envelope?", mesh.isenvelope())
     if edges.n_points > 0:
         p = pv.Plotter()
         p.add_mesh(poly)
@@ -139,13 +139,15 @@ if __name__ == "__main__":
     # booleans work on low res
     # test_boolean(res=100, dbg=True)  # set dbg to inspect what is going on
     for n in range(5, 105, 5):
-        base, tool, res = random_block(res=n, seed=1)
+        parts = random_block(res=n, seed=1)
 
         try:
-            print(f"testing res {n}")
-            test_boolean(base, tool, res)
+            print(f"testing res {n}...", end=", ")
+            test_boolean(*parts)
+
             print("ok! :)")
         except AssertionError:
             print(f"resolution: {n} failed")
+            debug_boolean(*parts)
 
-    debug_boolean(base, tool, res)
+    debug_boolean(*parts)
