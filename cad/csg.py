@@ -4,6 +4,8 @@ from madcad import typedlist, dvec3, Axis
 import pyvista as pv
 import numpy as np
 
+from typing import Tuple
+
 
 def poly2mad(poly: pv.PolyData) -> cad.Mesh:
     """
@@ -60,29 +62,31 @@ def inspect_open_edges(mesh: cad.Mesh, **kwargs):
         feature_edges=False, non_manifold_edges=False, manifold_edges=False
     )
     pmesh = pv.PolyData(edges.points)
-    p = pv.Plotter()
-    p.add_mesh(poly)
-    p.add_mesh(edges, color="red", line_width=2)
-    p.add_mesh(pmesh, color="blue", point_size=9.0)
-    p.show(**kwargs)
-    print(poly)
     print("poly n open edges", poly.n_open_edges)
     print("poly is manifold", poly.is_manifold)
     print("diff1 is envelope?", mesh.isenvelope())
+    if edges.n_points > 0:
+        p = pv.Plotter()
+        p.add_mesh(poly)
+        p.add_mesh(edges, color="red", line_width=2)
+        p.add_mesh(pmesh, color="blue", point_size=9.0)
+        p.show(**kwargs)
+        print(poly)
 
 
-def random_block(res=20, seed=1) -> cad.Mesh:
+def random_block(res=20, seed=1) -> Tuple[cad.Mesh, ...]:
     """A block shape that has been cut with randomhills"""
     surf1 = randsurf(res=res, seed=1)
-    # axis1 = Axis(dvec3(0, 10, -1), dvec3(0, 0, 1))
-    # plane1 = cad.square(axis1, 20)
-    surf2 = randsurf(res=res, seed=1)
-    for i, p in enumerate(surf2.points):
-        surf2.points[i] = dvec3(p[0] * 1.2, p[1] * 1.2, -2.0)
+    center = surf1.barycenter()
+    base = cad.extrusion(dvec3(center[0], center[1], -10), surf1)
+    axis1 = Axis(dvec3(0, 0, -1), dvec3(0, 0, 1))
+    tool = cad.square(axis1, 20)
+    # tool = randsurf(res=res, seed=1)
+    for i, p in enumerate(tool.points):
+        tool.points[i] = dvec3(p[0] * 1.2, p[1] * 1.2, -2.0)
 
-    ex1 = cad.extrusion(dvec3(0, 0, -10), surf1)
-    diff1 = cad.difference(ex1, surf2)
-    return diff1
+    res = cad.boolean.boolean(base, tool, (False, True))
+    return base, tool, res
 
 
 def random_block1(res=20, seed=1) -> cad.Mesh:
@@ -104,46 +108,44 @@ def random_block1(res=20, seed=1) -> cad.Mesh:
     # cad.show([top, skirt, bot])
 
 
-def test_block(block, dbg=False):
+def debug_boolean(base, tool, res):
+    cad.show([base, tool])
+    plot_normals(base)
+    plot_normals(tool)
+
+    cad.show([res])
+    plot_normals(res)
+    inspect_open_edges(res, title=f"Boolean op  {res} * {res}")
+
+
+def test_boolean(base: cad.Mesh, tool: cad.Mesh, res: cad.Mesh, dbg=False):
     """
     Test boolean operations robustness with a operations on a random generated Mesh
     """
-    surf1 = randsurf(res=res, seed=1)
-    axis1 = Axis(dvec3(0, 0, -1), dvec3(0, 0, 1))
-    plane1 = cad.square(axis1, 20)
-    block1 = cad.extrusion(dvec3(0, 0, 20), plane1)
-    ex1 = cad.extrusion(dvec3(0, 0, -10), surf1)
 
-    assert ex1.isvalid()
-    assert ex1.issurface()
-    assert ex1.isenvelope()
-    if dbg:
-        cad.show([ex1, plane1])
-        plot_normals(ex1)
-        plot_normals(block1)
+    assert base.isvalid()
+    assert base.issurface()
+    assert base.isenvelope()
 
-    print(ex1.precision(), plane1.precision())
-    diff1 = cad.intersection(ex1, block1.flip())
-    if dbg:
-        cad.show([diff1])
-        plot_normals(diff1)
-        inspect_open_edges(diff1, title=f"Boolean op  {res} * {res}")
+    assert tool.isvalid()
+    assert tool.issurface()
 
-    assert diff1.isvalid()
-    assert diff1.issurface()
-    assert diff1.isenvelope()
+    assert res.isvalid()
+    assert res.issurface()
+    assert res.isenvelope()
 
 
 if __name__ == "__main__":
     # booleans work on low res
-    random_block()
     # test_boolean(res=100, dbg=True)  # set dbg to inspect what is going on
-    for n in range(r, 55, 5):
-        block = random_block(r)
+    for n in range(5, 105, 5):
+        base, tool, res = random_block(res=n, seed=1)
 
         try:
-            test_boolean(res=n)
-            print(f"resolution: {n} worked")
-        except AssertionError as e:
-            test_boolean(res=n, dbg=True)  # set dbg to inspect what is going on
+            print(f"testing res {n}")
+            test_boolean(base, tool, res)
+            print("ok! :)")
+        except AssertionError:
             print(f"resolution: {n} failed")
+
+    debug_boolean(base, tool, res)
