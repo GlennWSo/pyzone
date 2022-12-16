@@ -119,10 +119,6 @@ def debug_boolean(base, tool, res):
 
 
 def test_boolean(base: cad.Mesh, tool: cad.Mesh, res: cad.Mesh, dbg=False):
-    """
-    Test boolean operations robustness with a operations on a random generated Mesh
-    """
-
     assert base.isvalid()
     assert base.issurface()
     assert base.isenvelope()
