@@ -1,0 +1,3 @@
+pyvista==0.37.0
+pymadcad==0.13.2
+rscad==0.0.1

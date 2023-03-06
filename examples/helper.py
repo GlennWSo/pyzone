@@ -25,21 +25,21 @@ def mad2poly(mesh: cad.Mesh) -> pv.PolyData:
     return poly
 
 
-poly = pv.Cube().triangulate().subdivide(2)
-poly.plot()
-cube = poly2mad(poly)
-cube.check()
+if __name__ == "__main__":
+    poly = pv.Cube().triangulate().subdivide(2)
+    poly.plot()
+    cube = poly2mad(poly)
+    cube.check()
 
-cyl_top = dvec3(0, 0, 1)
-cyl_bot = dvec3(0, 0, 0)
-cyl = cad.cylinder(cyl_bot, cyl_top, radius=0.3)
+    cyl_top = dvec3(0, 0, 1)
+    cyl_bot = dvec3(0, 0, 0)
+    cyl = cad.cylinder(cyl_bot, cyl_top, radius=0.3)
 
+    # cad.show([cube, cyl])
+    cut1 = cad.difference(cube, cyl)
 
-# cad.show([cube, cyl])
-cut1 = cad.difference(cube, cyl)
-
-cad.show([cut1])
-res = mad2poly(cut1)
-res.plot()
-assert res.n_open_edges == 0
-assert res.is_manifold
+    cad.show([cut1])
+    res = mad2poly(cut1)
+    res.plot()
+    assert res.n_open_edges == 0
+    assert res.is_manifold
